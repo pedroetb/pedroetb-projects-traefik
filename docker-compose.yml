@@ -4,67 +4,69 @@ services:
     image: traefik:${IMAGE_TAG:-latest}
     command:
       - "--api"
-      - "--logLevel=INFO"
-      - "--forwardingtimeouts.dialtimeout=15s"
-      - "--forwardingtimeouts.responseheadertimeout=15s"
-      - "--respondingtimeouts.idletimeout=30s"
-      - "--respondingtimeouts.readtimeout=1m"
-      - "--respondingtimeouts.writetimeout=1m"
-      - "--docker"
-      - "--docker.domain=${PUBLIC_HOSTNAME}"
-      - "--docker.watch"
-      - "--docker.swarmmode"
+      - "--logLevel=${TRAEFIK_LOG_LEVEL}"
+      - "--sendAnonymousUsage=true"
       - "--entrypoints=Name:http Address::80 Redirect.EntryPoint:https"
       - "--entrypoints=Name:https Address::443 TLS"
       - "--defaultentrypoints=http,https"
+      - "--maxIdleConnsPerHost=${TRAEFIK_MAX_IDLE_CONNECTIONS}"
+      - "--forwardingtimeouts.dialtimeout=${TRAEFIK_DIAL_TIMEOUT}"
+      - "--forwardingtimeouts.responseheadertimeout=0s"
+      - "--respondingtimeouts.idletimeout=${TRAEFIK_IDLE_TIMEOUT}"
+      - "--respondingtimeouts.readtimeout=0s"
+      - "--respondingtimeouts.writetimeout=0s"
+      - "--docker"
+      - "--docker.watch"
+      - "--docker.network=${TRAEFIK_NET_NAME}"
+      - "--docker.domain=${PUBLIC_HOSTNAME}"
+      - "--docker.swarmmode"
       - "--acme"
       - "--acme.onhostrule"
-      - "--acme.email=${ACME_EMAIL}"
+      - "--acme.email=${TRAEFIK_ACME_EMAIL}"
       - "--acme.storage=/etc/traefik/acme/acme.json"
       - "--acme.entrypoint=https"
       - "--acme.httpchallenge.entrypoint=http"
-      - "--acme.keytype=RSA4096"
+      - "--acme.keytype=${TRAEFIK_ACME_KEY_TYPE}"
     networks:
       - traefik-net
     ports:
       - target: 80
         published: 80
-        mode: ingress
+        mode: ${PORT_MODE}
       - target: 443
         published: 443
-        mode: ingress
+        mode: ${PORT_MODE}
     volumes:
-      - traefik-acme-vol:/etc/traefik/acme
-      - traefik-tmp-vol:/tmp
+      - acme-vol:/etc/traefik/acme
+      - tmp-vol:/tmp
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       mode: replicated
       replicas: 1
       labels:
-        traefik.docker.network: traefik-net
         traefik.frontend.auth.basic.users: ${UI_AUTH}
-        traefik.frontend.rule: Host:traefik.${PUBLIC_HOSTNAME}
-        traefik.port: "8080"
+        traefik.frontend.rule: Host:${SUBDOMAIN}.${PUBLIC_HOSTNAME}
         traefik.backend: traefik
+        traefik.port: '8080'
       restart_policy:
         delay: 10s
         window: 1m
       resources:
         limits:
-          cpus: '2'
-          memory: 128M
+          cpus: "${TRAEFIK_LIMITS_CPUS}"
+          memory: ${TRAEFIK_LIMITS_MEMORY}
         reservations:
-          memory: 103M
+          memory: ${TRAEFIK_RESERVATIONS_MEMORY}
 
 networks:
   traefik-net:
-    name: traefik-net
+    name: ${TRAEFIK_NET_NAME}
     driver: overlay
-    attachable: true
+    attachable: ${TRAEFIK_NET_ATTACHABLE:-true}
 
 volumes:
-  traefik-acme-vol:
-    name: traefik-acme-vol
+  acme-vol:
+    name: ${TRAEFIK_ACME_VOL_NAME:-traefik-acme-vol}
 
-  traefik-tmp-vol:
-    name: traefik-tmp-vol
+  tmp-vol:
+    name: ${TRAEFIK_TMP_VOL_NAME:-traefik-tmp-vol}

@@ -1,4 +1,5 @@
 version: '3.7'
+
 services:
   traefik:
     image: traefik:${IMAGE_TAG:-latest}
@@ -32,10 +33,10 @@ services:
     ports:
       - target: 80
         published: 80
-        mode: ${PORT_MODE}
+        mode: ${TRAEFIK_PORT_MODE}
       - target: 443
         published: 443
-        mode: ${PORT_MODE}
+        mode: ${TRAEFIK_PORT_MODE}
     volumes:
       - acme-vol:/etc/traefik/acme
       - tmp-vol:/tmp
@@ -44,8 +45,8 @@ services:
       mode: replicated
       replicas: ${TRAEFIK_REPLICAS}
       labels:
-        traefik.frontend.auth.basic.users: ${UI_AUTH}
-        traefik.frontend.rule: Host:${SUBDOMAIN}.${PUBLIC_HOSTNAME}
+        traefik.frontend.auth.basic.users: ${TRAEFIK_UI_AUTH}
+        traefik.frontend.rule: Host:${TRAEFIK_SUBDOMAIN}.${PUBLIC_HOSTNAME}
         traefik.backend: traefik
         traefik.port: '8080'
       restart_policy:

@@ -4,30 +4,32 @@ services:
   traefik:
     image: traefik:${IMAGE_TAG:-latest}
     command:
-      - "--api"
-      - "--logLevel=${TRAEFIK_LOG_LEVEL}"
-      - "--sendAnonymousUsage=true"
-      - "--entrypoints=Name:http Address::80 Redirect.EntryPoint:https"
-      - "--entrypoints=Name:https Address::443 TLS"
-      - "--defaultentrypoints=http,https"
-      - "--maxIdleConnsPerHost=${TRAEFIK_MAX_IDLE_CONNECTIONS}"
-      - "--forwardingtimeouts.dialtimeout=${TRAEFIK_DIAL_TIMEOUT}"
-      - "--forwardingtimeouts.responseheadertimeout=0s"
-      - "--respondingtimeouts.idletimeout=${TRAEFIK_IDLE_TIMEOUT}"
-      - "--respondingtimeouts.readtimeout=0s"
-      - "--respondingtimeouts.writetimeout=0s"
-      - "--docker"
-      - "--docker.watch"
-      - "--docker.network=${TRAEFIK_NET_NAME}"
-      - "--docker.domain=${PUBLIC_HOSTNAME}"
-      - "--docker.swarmmode"
-      - "--acme"
-      - "--acme.onhostrule"
-      - "--acme.email=${TRAEFIK_ACME_EMAIL}"
-      - "--acme.storage=/etc/traefik/acme/acme.json"
-      - "--acme.entrypoint=https"
-      - "--acme.httpchallenge.entrypoint=http"
-      - "--acme.keytype=${TRAEFIK_ACME_KEY_TYPE}"
+      - --api
+      - --logLevel=${TRAEFIK_LOG_LEVEL}
+      - --accessLog.filePath=/log/access.log
+      - --accessLog.filters.statusCodes=${TRAEFIK_ACCESS_LOG_STATUS_CODES}
+      - --sendAnonymousUsage=true
+      - --entrypoints=Name:http Address::80 Redirect.EntryPoint:https
+      - --entrypoints=Name:https Address::443 TLS
+      - --defaultentrypoints=http,https
+      - --maxIdleConnsPerHost=${TRAEFIK_MAX_IDLE_CONNECTIONS}
+      - --forwardingtimeouts.dialtimeout=${TRAEFIK_DIAL_TIMEOUT}
+      - --forwardingtimeouts.responseheadertimeout=0s
+      - --respondingtimeouts.idletimeout=${TRAEFIK_IDLE_TIMEOUT}
+      - --respondingtimeouts.readtimeout=0s
+      - --respondingtimeouts.writetimeout=0s
+      - --docker
+      - --docker.watch
+      - --docker.network=${TRAEFIK_NET_NAME}
+      - --docker.domain=${PUBLIC_HOSTNAME}
+      - --docker.swarmmode
+      - --acme
+      - --acme.onhostrule
+      - --acme.email=${TRAEFIK_ACME_EMAIL}
+      - --acme.storage=/acme/acme.json
+      - --acme.entrypoint=https
+      - --acme.httpchallenge.entrypoint=http
+      - --acme.keytype=${TRAEFIK_ACME_KEY_TYPE}
     networks:
       - traefik-net
     ports:
@@ -38,8 +40,9 @@ services:
         published: 443
         mode: ${TRAEFIK_PORT_MODE}
     volumes:
-      - acme-vol:/etc/traefik/acme
+      - acme-vol:/acme
       - tmp-vol:/tmp
+      - log-vol:/log
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       mode: replicated
@@ -71,3 +74,6 @@ volumes:
 
   tmp-vol:
     name: ${TRAEFIK_TMP_VOL_NAME:-traefik-tmp-vol}
+
+  log-vol:
+    name: ${TRAEFIK_LOG_VOL_NAME:-traefik-log-vol}

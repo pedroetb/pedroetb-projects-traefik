@@ -46,21 +46,21 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       mode: replicated
-      replicas: ${TRAEFIK_REPLICAS}
+      replicas: ${TRAEFIK_REPLICAS:-1}
       labels:
         traefik.frontend.auth.basic.users: ${TRAEFIK_UI_AUTH}
-        traefik.frontend.rule: Host:${TRAEFIK_SUBDOMAIN}.${PUBLIC_HOSTNAME}
+        traefik.frontend.rule: Host:${TRAEFIK_SUBDOMAIN:-traefik}.${PUBLIC_HOSTNAME}
         traefik.backend: traefik
         traefik.port: '8080'
       restart_policy:
-        delay: ${TRAEFIK_RESTART_POLICY_DELAY}
-        window: ${TRAEFIK_RESTART_POLICY_WINDOW}
+        delay: ${TRAEFIK_RESTART_POLICY_DELAY:-10s}
+        window: ${TRAEFIK_RESTART_POLICY_WINDOW:-1m}
       resources:
         limits:
-          cpus: "${TRAEFIK_LIMITS_CPUS}"
-          memory: ${TRAEFIK_LIMITS_MEMORY}
+          cpus: "${TRAEFIK_LIMITS_CPUS:-2}"
+          memory: ${TRAEFIK_LIMITS_MEMORY:-64M}
         reservations:
-          memory: ${TRAEFIK_RESERVATIONS_MEMORY}
+          memory: ${TRAEFIK_RESERVATIONS_MEMORY:-32M}
 
 networks:
   traefik-net:

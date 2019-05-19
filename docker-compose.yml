@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   traefik:
-    image: traefik:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAME:-traefik}:${IMAGE_TAG:-latest}
     command:
       - --api
       - --logLevel=${TRAEFIK_LOG_LEVEL}
@@ -55,11 +55,15 @@ services:
       restart_policy:
         delay: ${TRAEFIK_RESTART_POLICY_DELAY:-10s}
         window: ${TRAEFIK_RESTART_POLICY_WINDOW:-1m}
+      placement:
+        constraints:
+          - ${TRAEFIK_PLACEMENT_CONSTRAINT:-node.hostname == node}
       resources:
         limits:
-          cpus: "${TRAEFIK_LIMITS_CPUS:-2}"
+          cpus: '${TRAEFIK_LIMITS_CPUS:-2}'
           memory: ${TRAEFIK_LIMITS_MEMORY:-64M}
         reservations:
+          cpus: '${TRAEFIK_RESERVATIONS_CPUS:-0.001}'
           memory: ${TRAEFIK_RESERVATIONS_MEMORY:-32M}
 
 networks:

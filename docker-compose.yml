@@ -34,10 +34,20 @@ services:
       - traefik-net
     ports:
       - target: 80
-        published: 80
+        published: ${TRAEFIK_HTTP_PORT}
+        protocol: tcp
+        mode: ${TRAEFIK_PORT_MODE}
+      - target: 80
+        published: ${TRAEFIK_HTTP_PORT}
+        protocol: udp
         mode: ${TRAEFIK_PORT_MODE}
       - target: 443
-        published: 443
+        published: ${TRAEFIK_HTTPS_PORT}
+        protocol: tcp
+        mode: ${TRAEFIK_PORT_MODE}
+      - target: 443
+        published: ${TRAEFIK_HTTPS_PORT}
+        protocol: udp
         mode: ${TRAEFIK_PORT_MODE}
     volumes:
       - acme-vol:/acme

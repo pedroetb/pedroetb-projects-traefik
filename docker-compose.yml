@@ -2,92 +2,113 @@ version: '3.7'
 
 services:
   traefik:
-    image: ${IMAGE_NAME:-traefik}:${IMAGE_TAG:-latest}
-    command:
-      - --api
-      - --logLevel=${TRAEFIK_LOG_LEVEL}
-      - --accessLog.filePath=/log/access.log
-      - --accessLog.filters.statusCodes=${TRAEFIK_ACCESS_LOG_STATUS_CODES}
-      - --sendAnonymousUsage=true
-      - --entrypoints=Name:http Address::80 Redirect.EntryPoint:https
-      - --entrypoints=Name:https Address::443 TLS
-      - --defaultentrypoints=http,https
-      - --maxIdleConnsPerHost=${TRAEFIK_MAX_IDLE_CONNECTIONS}
-      - --forwardingtimeouts.dialtimeout=${TRAEFIK_DIAL_TIMEOUT}
-      - --forwardingtimeouts.responseheadertimeout=0s
-      - --respondingtimeouts.idletimeout=${TRAEFIK_IDLE_TIMEOUT}
-      - --respondingtimeouts.readtimeout=0s
-      - --respondingtimeouts.writetimeout=0s
-      - --docker
-      - --docker.watch
-      - --docker.network=${TRAEFIK_NET_NAME}
-      - --docker.domain=${PUBLIC_HOSTNAME}
-      - --docker.swarmmode
-      - --acme
-      - --acme.onhostrule
-      - --acme.email=${TRAEFIK_ACME_EMAIL}
-      - --acme.storage=/acme/acme.json
-      - --acme.entrypoint=https
-      - --acme.httpchallenge.entrypoint=http
-      - --acme.keytype=${TRAEFIK_ACME_KEY_TYPE}
+    image: ${IMAGE_NAME:-traefik}:${IMAGE_TAG:-v2.0}
+    environment:
+      TRAEFIK_API:
+      TRAEFIK_API_INSECURE:
+      TRAEFIK_PING:
+      TRAEFIK_PING_ENTRYPOINT:
+      TRAEFIK_LOG_LEVEL:
+      TRAEFIK_ACCESSLOG_FILEPATH:
+      TRAEFIK_ACCESSLOG_FILTERS_STATUSCODES:
+      TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE:
+      TRAEFIK_GLOBAL_CHECKNEWVERSION:
+      TRAEFIK_SERVERSTRANSPORT_MAXIDLECONNSPERHOST:
+      TRAEFIK_SERVERSTRANSPORT_FORWARDINGTIMEOUTS_DIALTIMEOUT:
+      TRAEFIK_SERVERSTRANSPORT_FORWARDINGTIMEOUTS_IDLECONNTIMEOUT:
+      TRAEFIK_SERVERSTRANSPORT_FORWARDINGTIMEOUTS_RESPONSEHEADERTIMEOUT:
+      TRAEFIK_ENTRYPOINTS_HTTP_ADDRESS: :${HTTP_INTERNAL_PORT}
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT:
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT:
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT:
+      TRAEFIK_ENTRYPOINTS_HTTPS_ADDRESS: :${HTTPS_INTERNAL_PORT}
+      TRAEFIK_ENTRYPOINTS_HTTPS_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT:
+      TRAEFIK_ENTRYPOINTS_HTTPS_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT:
+      TRAEFIK_ENTRYPOINTS_HTTPS_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT:
+      TRAEFIK_PROVIDERS_DOCKER:
+      TRAEFIK_PROVIDERS_DOCKER_WATCH:
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: ${TRAEFIK_NET_NAME}
+      TRAEFIK_PROVIDERS_DOCKER_SWARMMODE:
+      TRAEFIK_PROVIDERS_DOCKER_SWARMMODEREFRESHSECONDS:
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_EMAIL: ${TRAEFIK_ACME_EMAIL}
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_STORAGE:
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_HTTPCHALLENGE:
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_HTTPCHALLENGE_ENTRYPOINT:
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_TLSCHALLENGE:
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_KEYTYPE:
     networks:
-      - traefik-net
+      traefik-net:
     ports:
-      - target: 80
-        published: ${TRAEFIK_HTTP_PORT}
+      - target: ${HTTP_INTERNAL_PORT}
+        published: ${HTTP_PORT}
         protocol: tcp
-        mode: ${TRAEFIK_PORT_MODE}
-      - target: 80
-        published: ${TRAEFIK_HTTP_PORT}
+        mode: ${PORT_MODE}
+      - target: ${HTTP_INTERNAL_PORT}
+        published: ${HTTP_PORT}
         protocol: udp
-        mode: ${TRAEFIK_PORT_MODE}
-      - target: 443
-        published: ${TRAEFIK_HTTPS_PORT}
+        mode: ${PORT_MODE}
+      - target: ${HTTPS_INTERNAL_PORT}
+        published: ${HTTPS_PORT}
         protocol: tcp
-        mode: ${TRAEFIK_PORT_MODE}
-      - target: 443
-        published: ${TRAEFIK_HTTPS_PORT}
+        mode: ${PORT_MODE}
+      - target: ${HTTPS_INTERNAL_PORT}
+        published: ${HTTPS_PORT}
         protocol: udp
-        mode: ${TRAEFIK_PORT_MODE}
+        mode: ${PORT_MODE}
     volumes:
       - acme-vol:/acme
       - tmp-vol:/tmp
       - log-vol:/log
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: traefik healthcheck
+      interval: ${HEALTHCHECK_INTERVAL:-30s}
+      timeout: ${HEALTHCHECK_TIMEOUT:-10s}
+      retries: ${HEALTHCHECK_RETRIES:-3}
+      start_period: ${HEALTHCHECK_START_PERIOD:-1m}
     deploy:
       mode: replicated
-      replicas: ${TRAEFIK_REPLICAS:-1}
-      labels:
-        traefik.frontend.auth.basic.users: ${TRAEFIK_UI_AUTH}
-        traefik.frontend.rule: Host:${TRAEFIK_SUBDOMAIN:-traefik}.${PUBLIC_HOSTNAME}
-        traefik.backend: traefik
-        traefik.port: '8080'
+      replicas: ${REPLICAS:-1}
       restart_policy:
-        delay: ${TRAEFIK_RESTART_POLICY_DELAY:-10s}
-        window: ${TRAEFIK_RESTART_POLICY_WINDOW:-1m}
+        delay: ${RESTART_DELAY:-5s}
+      update_config:
+        delay: ${UPDATE_DELAY:-1m}
       placement:
         constraints:
-          - ${TRAEFIK_PLACEMENT_CONSTRAINT:-node.hostname == node}
+          - ${PLACEMENT_CONSTRAINT:-node.hostname == node}
+      labels:
+        traefik.http.routers.traefik-redirect.entrypoints: http
+        traefik.http.routers.traefik-redirect.rule: PathPrefix(`/`)
+        traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme: https
+        traefik.http.routers.traefik-redirect.middlewares: traefik-https-redirect
+
+        traefik.http.routers.traefik-dashboard.entrypoints: https
+        traefik.http.routers.traefik-dashboard.tls.certresolver: default
+        traefik.http.routers.traefik-dashboard.rule: Host(`${TRAEFIK_SUBDOMAIN:-traefik}.${TRAEFIK_DOMAIN}`)
+        traefik.http.middlewares.traefik-dashboard-auth.basicauth.users: ${TRAEFIK_AUTH}
+        traefik.http.routers.traefik-dashboard.middlewares: traefik-dashboard-auth
+        traefik.http.routers.traefik-dashboard.service: api@internal
+        traefik.http.services.traefik-dashboard.loadbalancer.server.port: ${TRAEFIK_DASHBOARD_PORT:-8080}
       resources:
         limits:
-          cpus: '${TRAEFIK_LIMITS_CPUS:-2}'
-          memory: ${TRAEFIK_LIMITS_MEMORY:-64M}
+          cpus: '${RESOURCES_LIMITS_CPUS:-2}'
+          memory: ${RESOURCES_LIMITS_MEMORY:-64M}
         reservations:
-          cpus: '${TRAEFIK_RESERVATIONS_CPUS:-0.001}'
-          memory: ${TRAEFIK_RESERVATIONS_MEMORY:-32M}
+          cpus: '${RESOURCES_RESERVATIONS_CPUS:-0.001}'
+          memory: ${RESOURCES_RESERVATIONS_MEMORY:-32M}
 
 networks:
   traefik-net:
     name: ${TRAEFIK_NET_NAME}
-    driver: overlay
+    driver: ${TRAEFIK_NET_DRIVER:-overlay}
     attachable: ${TRAEFIK_NET_ATTACHABLE:-true}
 
 volumes:
   acme-vol:
-    name: ${TRAEFIK_ACME_VOL_NAME:-traefik-acme-vol}
+    name: ${ACME_VOL_NAME:-traefik-acme-vol}
 
   tmp-vol:
-    name: ${TRAEFIK_TMP_VOL_NAME:-traefik-tmp-vol}
+    name: ${TMP_VOL_NAME:-traefik-tmp-vol}
 
   log-vol:
-    name: ${TRAEFIK_LOG_VOL_NAME:-traefik-log-vol}
+    name: ${LOG_VOL_NAME:-traefik-log-vol}

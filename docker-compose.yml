@@ -81,6 +81,7 @@ services:
         traefik.http.routers.traefik-redirect.rule: PathPrefix(`/`)
         traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme: https
         traefik.http.routers.traefik-redirect.middlewares: traefik-https-redirect
+        traefik.http.services.traefik-redirect.loadbalancer.server.port: 0
 
         traefik.http.routers.traefik-dashboard.entrypoints: https
         traefik.http.routers.traefik-dashboard.tls.certresolver: default
@@ -88,7 +89,6 @@ services:
         traefik.http.middlewares.traefik-dashboard-auth.basicauth.users: ${TRAEFIK_AUTH}
         traefik.http.routers.traefik-dashboard.middlewares: traefik-dashboard-auth
         traefik.http.routers.traefik-dashboard.service: api@internal
-        traefik.http.services.traefik-dashboard.loadbalancer.server.port: ${TRAEFIK_DASHBOARD_PORT:-8080}
       resources:
         limits:
           cpus: '${RESOURCES_LIMITS_CPUS:-2}'

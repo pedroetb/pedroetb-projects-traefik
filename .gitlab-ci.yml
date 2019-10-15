@@ -6,9 +6,6 @@ include:
 stages:
   - deploy
 
-variables:
-  DEPLOY_ENVIRONMENT_URL: https://${CI_PROJECT_NAME}.${DD_TRAEFIK_DOMAIN}
-
 .deploy:
   environment:
-    url: ${DEPLOY_ENVIRONMENT_URL}
+    url: https://${CI_PROJECT_NAME}.${DD_TRAEFIK_DOMAIN}

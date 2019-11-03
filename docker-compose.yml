@@ -69,14 +69,14 @@ services:
     healthcheck:
       test: traefik healthcheck
       interval: ${HEALTHCHECK_INTERVAL:-30s}
-      timeout: ${HEALTHCHECK_TIMEOUT:-10s}
-      retries: ${HEALTHCHECK_RETRIES:-3}
+      timeout: ${HEALTHCHECK_TIMEOUT:-30s}
+      retries: ${HEALTHCHECK_RETRIES:-10}
       start_period: ${HEALTHCHECK_START_PERIOD:-1m}
     deploy:
       mode: replicated
       replicas: ${REPLICAS:-1}
       restart_policy:
-        delay: ${RESTART_DELAY:-5s}
+        delay: ${RESTART_DELAY:-0s}
       update_config:
         delay: ${UPDATE_DELAY:-1m}
       placement:

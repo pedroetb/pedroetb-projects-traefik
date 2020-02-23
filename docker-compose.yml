@@ -84,7 +84,7 @@ services:
         constraints:
           - ${PLACEMENT_CONSTRAINT:-node.hostname == node}
       labels:
-        traefik.enable: true
+        traefik.enable: 'true'
 
         traefik.http.routers.traefik-redirect.entrypoints: http
         traefik.http.routers.traefik-redirect.rule: PathPrefix(`/`)

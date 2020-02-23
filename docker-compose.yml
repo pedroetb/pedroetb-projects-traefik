@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   traefik:
-    image: ${IMAGE_NAME:-traefik}:${IMAGE_TAG:-v2.0}
+    image: ${IMAGE_NAME:-traefik}:${IMAGE_TAG:-latest}
     environment:
       TRAEFIK_API:
       TRAEFIK_API_DASHBOARD:

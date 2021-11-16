@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.8'
 
 services:
   traefik:
@@ -26,6 +26,10 @@ services:
       TRAEFIK_ENTRYPOINTS_HTTPS_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT:
       TRAEFIK_ENTRYPOINTS_HTTPS_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT:
       TRAEFIK_ENTRYPOINTS_HTTPS_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT:
+      TRAEFIK_ENTRYPOINTS_MQTT_ADDRESS: :${MQTT_INTERNAL_PORT}
+      TRAEFIK_ENTRYPOINTS_MQTT_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT:
+      TRAEFIK_ENTRYPOINTS_MQTT_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT:
+      TRAEFIK_ENTRYPOINTS_MQTT_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT:
       TRAEFIK_PROVIDERS_DOCKER:
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT:
       TRAEFIK_PROVIDERS_DOCKER_WATCH:
@@ -50,17 +54,13 @@ services:
         published: ${HTTP_PORT}
         protocol: tcp
         mode: ${PORT_MODE}
-      - target: ${HTTP_INTERNAL_PORT}
-        published: ${HTTP_PORT}
-        protocol: udp
-        mode: ${PORT_MODE}
       - target: ${HTTPS_INTERNAL_PORT}
         published: ${HTTPS_PORT}
         protocol: tcp
         mode: ${PORT_MODE}
-      - target: ${HTTPS_INTERNAL_PORT}
-        published: ${HTTPS_PORT}
-        protocol: udp
+      - target: ${MQTT_INTERNAL_PORT}
+        published: ${MQTT_PORT}
+        protocol: tcp
         mode: ${PORT_MODE}
     volumes:
       - acme-vol:/acme

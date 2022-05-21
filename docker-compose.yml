@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   traefik:
@@ -10,6 +10,7 @@ services:
       TRAEFIK_PING:
       TRAEFIK_PING_ENTRYPOINT:
       TRAEFIK_LOG_LEVEL:
+      TRAEFIK_ACCESSLOG:
       TRAEFIK_ACCESSLOG_FILEPATH:
       TRAEFIK_ACCESSLOG_FILTERS_STATUSCODES:
       TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE:
@@ -26,6 +27,7 @@ services:
       TRAEFIK_ENTRYPOINTS_HTTPS_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT:
       TRAEFIK_ENTRYPOINTS_HTTPS_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT:
       TRAEFIK_ENTRYPOINTS_HTTPS_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT:
+      TRAEFIK_ENTRYPOINTS_HTTPS_HTTP_TLS_CERTRESOLVER:
       TRAEFIK_ENTRYPOINTS_MQTT_ADDRESS: :${MQTT_INTERNAL_PORT}
       TRAEFIK_ENTRYPOINTS_MQTT_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT:
       TRAEFIK_ENTRYPOINTS_MQTT_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT:
@@ -82,19 +84,19 @@ services:
         delay: ${UPDATE_DELAY:-1m}
       placement:
         constraints:
-          - ${PLACEMENT_CONSTRAINT:-node.hostname == node}
+          - node.labels.${PLACEMENT_CONSTRAINTS_NODE_LABELS_NAME} == ${PLACEMENT_CONSTRAINTS_NODE_LABELS_VALUE}
       labels:
         traefik.enable: 'true'
+        traefik.http.services.dummy.loadbalancer.server.port: 0
 
-        traefik.http.routers.traefik-redirect.entrypoints: http
-        traefik.http.routers.traefik-redirect.rule: PathPrefix(`/`)
-        traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme: https
-        traefik.http.routers.traefik-redirect.middlewares: traefik-https-redirect
-        traefik.http.services.traefik-redirect.loadbalancer.server.port: 0
+        traefik.http.routers.http-redirect.entrypoints: http
+        traefik.http.routers.http-redirect.rule: PathPrefix(`/`)
+        traefik.http.middlewares.http-redirect.redirectscheme.scheme: https
+        traefik.http.routers.http-redirect.middlewares: http-redirect
+        traefik.http.routers.http-redirect.service: noop@internal
 
         traefik.http.routers.traefik-dashboard.entrypoints: https
-        traefik.http.routers.traefik-dashboard.tls.certresolver: default
-        traefik.http.routers.traefik-dashboard.rule: Host(`${TRAEFIK_SUBDOMAIN:-traefik}.${TRAEFIK_DOMAIN}`)
+        traefik.http.routers.traefik-dashboard.rule: Host(`${TRAEFIK_SUBDOMAIN}.${TRAEFIK_DOMAIN}`)
         traefik.http.middlewares.traefik-dashboard-auth.basicauth.users: ${TRAEFIK_AUTH}
         traefik.http.routers.traefik-dashboard.middlewares: traefik-dashboard-auth
         traefik.http.routers.traefik-dashboard.service: api@internal
@@ -103,7 +105,7 @@ services:
           cpus: '${RESOURCES_LIMITS_CPUS:-2}'
           memory: ${RESOURCES_LIMITS_MEMORY:-128M}
         reservations:
-          cpus: '${RESOURCES_RESERVATIONS_CPUS:-0.001}'
+          cpus: '${RESOURCES_RESERVATIONS_CPUS:-0.1}'
           memory: ${RESOURCES_RESERVATIONS_MEMORY:-32M}
 
 networks:

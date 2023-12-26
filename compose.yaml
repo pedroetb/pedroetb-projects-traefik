@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   traefik:
     image: ${IMAGE_NAME:-traefik}:${IMAGE_TAG:-latest}
@@ -87,6 +85,7 @@ services:
       placement:
         max_replicas_per_node: 1
         constraints:
+          - node.role == manager
           - node.labels.${PLACEMENT_CONSTRAINTS_NODE_LABELS_NAME} == ${PLACEMENT_CONSTRAINTS_NODE_LABELS_VALUE}
       labels:
         traefik.enable: ${TRAEFIK_ENABLE:-true}
@@ -109,7 +108,7 @@ services:
         traefik.http.routers.node-healthcheck.service: ping@internal
       resources:
         limits:
-          cpus: '${RESOURCES_LIMITS_CPUS:-2}'
+          cpus: '${RESOURCES_LIMITS_CPUS:-1}'
           memory: ${RESOURCES_LIMITS_MEMORY:-128M}
         reservations:
           cpus: '${RESOURCES_RESERVATIONS_CPUS:-0.1}'
@@ -124,12 +123,12 @@ networks:
 volumes:
   acme-vol:
     name: ${ACME_VOL_NAME:-traefik-acme-vol}
-    driver: local
+    driver: ${VOL_DRIVER}
 
   tmp-vol:
     name: ${TMP_VOL_NAME:-traefik-tmp-vol}
-    driver: local
+    driver: ${VOL_DRIVER}
 
   log-vol:
     name: ${LOG_VOL_NAME:-traefik-log-vol}
-    driver: local
+    driver: ${VOL_DRIVER}

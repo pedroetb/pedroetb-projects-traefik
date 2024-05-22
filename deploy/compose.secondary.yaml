@@ -1,0 +1,93 @@
+services:
+  traefik:
+    image: ${IMAGE_NAME:-traefik}:${IMAGE_TAG:-latest}
+    environment:
+      TRAEFIK_API:
+      TRAEFIK_API_DASHBOARD:
+      TRAEFIK_API_INSECURE:
+      TRAEFIK_PING:
+      TRAEFIK_PING_ENTRYPOINT:
+      TRAEFIK_LOG_LEVEL:
+      TRAEFIK_ACCESSLOG:
+      TRAEFIK_ACCESSLOG_FILTERS_STATUSCODES:
+      TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE:
+      TRAEFIK_GLOBAL_CHECKNEWVERSION:
+      TRAEFIK_SERVERSTRANSPORT_MAXIDLECONNSPERHOST:
+      TRAEFIK_SERVERSTRANSPORT_FORWARDINGTIMEOUTS_DIALTIMEOUT:
+      TRAEFIK_SERVERSTRANSPORT_FORWARDINGTIMEOUTS_IDLECONNTIMEOUT:
+      TRAEFIK_SERVERSTRANSPORT_FORWARDINGTIMEOUTS_RESPONSEHEADERTIMEOUT:
+      TRAEFIK_SERVERSTRANSPORT_INSECURESKIPVERIFY:
+      TRAEFIK_ENTRYPOINTS_HTTP_ADDRESS: :${HTTP_INTERNAL_PORT}
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT:
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT:
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT:
+      TRAEFIK_PROVIDERS_DOCKER:
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT:
+      TRAEFIK_PROVIDERS_DOCKER_WATCH:
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: ${TRAEFIK_NET_NAME}
+      TRAEFIK_PROVIDERS_DOCKER_SWARMMODE:
+      TRAEFIK_PROVIDERS_DOCKER_SWARMMODEREFRESHSECONDS:
+      TRAEFIK_METRICS_PROMETHEUS:
+      TRAEFIK_METRICS_PROMETHEUS_ADDENTRYPOINTSLABELS:
+      TRAEFIK_METRICS_PROMETHEUS_ADDSERVICESLABELS:
+      TRAEFIK_METRICS_PROMETHEUS_BUCKETS:
+      TRAEFIK_METRICS_PROMETHEUS_ENTRYPOINT:
+    networks:
+      traefik-net:
+    ports:
+      - target: ${HTTP_INTERNAL_PORT}
+        published: ${HTTP_PORT}
+        protocol: tcp
+        mode: ${PORT_MODE}
+    volumes:
+      - tmp-vol:/tmp
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: traefik healthcheck
+      interval: ${HEALTHCHECK_INTERVAL:-30s}
+      timeout: ${HEALTHCHECK_TIMEOUT:-30s}
+      retries: ${HEALTHCHECK_RETRIES:-10}
+      start_period: ${HEALTHCHECK_START_PERIOD:-1m}
+    deploy:
+      mode: replicated
+      replicas: ${REPLICAS:-1}
+      restart_policy:
+        delay: ${RESTART_DELAY:-0s}
+      update_config:
+        delay: ${UPDATE_DELAY:-1m}
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.role == manager
+          - node.labels.${PLACEMENT_CONSTRAINTS_NODE_LABELS_NAME} == ${PLACEMENT_CONSTRAINTS_NODE_LABELS_VALUE}
+      labels:
+        traefik.enable: ${TRAEFIK_ENABLE:-true}
+        traefik.http.services.dummy.loadbalancer.server.port: 0
+
+        traefik.http.routers.traefik-dashboard.entrypoints: http
+        traefik.http.routers.traefik-dashboard.rule: Host(`${TRAEFIK_SUBDOMAIN}.${TRAEFIK_DOMAIN}`)
+        traefik.http.middlewares.traefik-dashboard-auth.basicauth.users: ${TRAEFIK_AUTH}
+        traefik.http.routers.traefik-dashboard.middlewares: traefik-dashboard-auth
+        traefik.http.routers.traefik-dashboard.service: api@internal
+
+        traefik.http.routers.node-healthcheck.entrypoints: http
+        traefik.http.routers.node-healthcheck.rule: HostRegexp(`{s:.*}`) && Path(`/ping`)
+        traefik.http.routers.node-healthcheck.service: ping@internal
+      resources:
+        limits:
+          cpus: '${RESOURCES_LIMITS_CPUS:-1}'
+          memory: ${RESOURCES_LIMITS_MEMORY:-256M}
+        reservations:
+          cpus: '${RESOURCES_RESERVATIONS_CPUS:-0.1}'
+          memory: ${RESOURCES_RESERVATIONS_MEMORY:-64M}
+
+networks:
+  traefik-net:
+    name: ${TRAEFIK_NET_NAME}
+    driver: ${TRAEFIK_NET_DRIVER:-overlay}
+    attachable: ${TRAEFIK_NET_ATTACHABLE:-true}
+
+volumes:
+  tmp-vol:
+    name: ${TMP_VOL_NAME:-traefik-tmp-vol}
+    driver: ${VOL_DRIVER}

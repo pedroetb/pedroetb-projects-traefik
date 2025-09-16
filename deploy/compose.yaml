@@ -78,14 +78,12 @@ services:
       retries: ${HEALTHCHECK_RETRIES:-10}
       start_period: ${HEALTHCHECK_START_PERIOD:-1m}
     deploy:
-      mode: replicated
-      replicas: ${REPLICAS:-1}
+      mode: global
       restart_policy:
         delay: ${RESTART_DELAY:-0s}
       update_config:
         delay: ${UPDATE_DELAY:-1m}
       placement:
-        max_replicas_per_node: 1
         constraints:
           - node.role == manager
           - ${PLACEMENT_CONSTRAINTS_NAME} ${PLACEMENT_CONSTRAINTS_OPERATOR:-==} ${PLACEMENT_CONSTRAINTS_VALUE}

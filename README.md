@@ -6,10 +6,10 @@ Modern reverse proxy and load balancer with automatic and dynamic configuration
 
 > Extracted from:
 >
-> - <https://blog.ichasco.com/traefik-configurar-dns-01-challenges-de-lets-encrypt-en-ovh-con-wildcards>
+> - <https://blog.ichasco.com/traefik-configurar-dns-01-challenges-de-lets-encrypt-en-ovh-con-wildcards/>
 > - <https://go-acme.github.io/lego/dns/ovh/index.html>
 
-First, you need to create a new app at OVH from <https://eu.api.ovh.com/createApp>.
+First, you need to create a new app at OVH from <https://eu.api.ovh.com/createApp/>.
 
 This will provide your values for `OVH_APPLICATION_KEY` and `OVH_APPLICATION_SECRET`.
 
@@ -44,4 +44,4 @@ This will provide a response containing `OVH_CONSUMER_KEY` and a URL to grant re
 ## References
 
 - Check `traefik` repository at <https://github.com/traefik/traefik>.
-- Check official docs at <https://doc.traefik.io/traefik>.
+- Check official docs at <https://doc.traefik.io/traefik/>.

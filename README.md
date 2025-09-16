@@ -35,7 +35,7 @@ curl \
       "method": "DELETE",
       "path": "/*"
     }],
-    "redirection": "${TRAEFIK_DOMAIN}/"
+    "redirection": "https://${TRAEFIK_DOMAIN}/"
   }'
 ```
 
